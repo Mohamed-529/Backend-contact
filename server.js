@@ -18,6 +18,32 @@ app.use(
 express.json()
 );
 
+app.get(
+"/",
+
+(req,res)=>{
+
+res
+.status(200)
+
+.json({
+
+success:true,
+
+message:
+"Contact Management API is running",
+
+version:
+"1.0",
+
+developer:
+"Mohamed Yusuff"
+
+});
+
+}
+);
+
 app.use(
 "/api/contacts",
 require("./src/routes/contactRoutes")
@@ -27,11 +53,22 @@ app.use(
 require("./src/middleware/errorHandler")
 );
 
+const PORT =
+process.env.PORT
+||
+5000;
+
+
 app.listen(
-5000,
-() => {
+
+PORT,
+
+()=>{
+
 console.log(
-"Server running on port 5000"
+
+`Server running on ${PORT}`
+
 );
-}
-);
+
+});
