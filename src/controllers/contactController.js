@@ -139,6 +139,46 @@ parseInt(
 req.query.page
 );
 
+if(
+page &&
+page < 1
+){
+
+return res
+.status(400)
+.json({
+
+success:false,
+
+message:
+"Page must be greater than 0",
+
+errors:[]
+
+});
+
+}
+
+if(
+limit &&
+limit < 1
+){
+
+return res
+.status(400)
+.json({
+
+success:false,
+
+message:
+"Limit must be greater than 0",
+
+errors:[]
+
+});
+
+}
+
 
 const limit =
 parseInt(

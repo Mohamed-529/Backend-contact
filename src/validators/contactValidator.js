@@ -12,32 +12,37 @@ require(
 exports.validateContact = [
 
 body(
-"name"
+"first_name"
 )
 
 .notEmpty()
 
 .withMessage(
-"name is required"
+
+"first_name required"
+
 )
 
 .isLength({
 
-min:3
+min:2
 
 })
 
 .withMessage(
 
-"name must be at least 3 characters"
+"first_name minimum 2 characters"
 
 ),
+
+body(
+"last_name"
+).optional(),
 
 
 
 body(
-"email"
-)
+"email")
 
 .notEmpty()
 
