@@ -135,60 +135,16 @@ async(req,res,next)=>{
 try{
 
 const page =
-parseInt(
-req.query.page
-);
-
-if(
-page &&
-page < 1
-){
-
-return res
-.status(400)
-.json({
-
-success:false,
-
-message:
-"Page must be greater than 0",
-
-errors:[]
-
-});
-
-}
-
-if(
-limit &&
-limit < 1
-){
-
-return res
-.status(400)
-.json({
-
-success:false,
-
-message:
-"Limit must be greater than 0",
-
-errors:[]
-
-});
-
-}
-
+parseInt(req.query.page) || 1;
 
 const limit =
-parseInt(
-req.query.limit
-);
+parseInt(req.query.limit) || 5;
 
+const skip =
+(page - 1) * limit;
 
 const search =
-req.query.search
-|| "";
+req.query.search || "";
 
 const status =
 req.query.status;
@@ -199,22 +155,16 @@ let filter = {
 $or:[
 
 {
-name:{
-$regex:
-search,
-
-$options:
-"i"
+first_name:{
+$regex:search,
+$options:"i"
 }
 },
 
 {
 email:{
-$regex:
-search,
-
-$options:
-"i"
+$regex:search,
+$options:"i"
 }
 }
 
@@ -223,82 +173,34 @@ $options:
 };
 
 
-if(
-status
-){
-
-filter.status =
-status;
-
+if(status){
+filter.status = status;
 }
 
 
-let query =
+const contacts =
+await Contact.find(filter)
 
-Contact.find(
-filter
-)
+.select("-_id -__v")
 
-.select(
-"-_id -__v"
-)
-
-.sort({
-
-contactId:1
-
-});
-
-
-if(
-page &&
-limit
-){
-
-const skip =
-
-(page-1)
-*
-limit;
-
-
-query =
-
-query
+.sort({ contactId:1 })
 
 .skip(skip)
 
 .limit(limit);
 
-}
-
-
-const contacts =
-
-await query;
-
 
 const total =
-
-await Contact
-.countDocuments(
-filter
-);
+await Contact.countDocuments(filter);
 
 
-res
-.status(200)
-.json({
+res.status(200).json({
 
 success:true,
-
+message:"Contacts retrieved successfully",
 total,
-
-message:
-"Contacts retrieved successfully",
-
-data:
-contacts
+page,
+data:contacts
 
 });
 
@@ -309,7 +211,6 @@ next(err);
 }
 
 };
-
 
 exports.getById =
 async(req,res,next)=>{
