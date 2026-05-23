@@ -13,116 +13,83 @@ async(req,res,next)=>{
 
 try{
 
-const errors =validationResult(req);
+// 1. Validation errors check
+const errors =
+validationResult(req);
 
-if(
-
-!errors.isEmpty()
-
-){
-
-return res
-.status(400)
-.json({
-
+if(!errors.isEmpty()){
+return res.status(400).json({
 success:false,
+message:"Validation failed",
+errors:[]
+});
+}
 
-message:
 
-"Invalid input data",
-
-errors:
-
-errors.array()
-
+// 2. Duplicate ACTIVE email check
+const duplicate =
+await Contact.findOne({
+email:req.body.email,
+status:"active"
 });
 
+if(duplicate){
+return res.status(409).json({
+success:false,
+message:"Active email already exists",
+errors:[]
+});
 }
 
+
+// 3. Auto increment contactId
 const lastContact =
-await Contact
-.findOne()
-.sort(
-{
-contactId:-1
-}
-);
+await Contact.findOne()
+.sort({ contactId:-1 });
 
 const nextId =
-lastContact
-&&
-lastContact.contactId?lastContact.contactId + 1:1;
-
-const duplicate =
-
-await Contact.findOne({
-
-$or:[
-
-{
-email:
-req.body.email
-},
-
-{
-phone:
-req.body.phone
-}
-
-]
-
-});
+lastContact && lastContact.contactId
+? lastContact.contactId + 1
+: 1;
 
 
-if(
-duplicate
-){
-
-return res
-.status(409)
-.json({
-
-success:false,
-
-message:
-
-"Email or phone already exists"
-
-});
-
-}
-
+// 4. Create contact
 const contact =
 await Contact.create({
-
-contactId:
-nextId,
-
-...req.body
-
+contactId: nextId,
+first_name: req.body.first_name,
+last_name: req.body.last_name || "",
+email: req.body.email,
+phone: req.body.phone,
+status: req.body.status || "active",
+company: req.body.company
 });
 
 
-res
-res
-.status(201)
+// 5. Clean response formatting
+const responseData = {
+contactId: contact.contactId,
+first_name: contact.first_name,
+last_name: contact.last_name,
+email: contact.email,
+phone: contact.phone,
+status: contact.status,
+company: contact.company,
+createdAt: contact.createdAt,
+updatedAt: contact.updatedAt
+};
 
-.json({
 
+// 6. Success response
+return res.status(201).json({
 success:true,
-
-message:
-"Contact created successfully",
-
-data:
-contact
-
+message:"Contact created successfully",
+data:responseData
 });
+
 
 }catch(err){
-
 next(err);
-
 }
 
 };
@@ -156,6 +123,7 @@ req.query.status;
 
 
 let filter = {
+    deteled: false, 
 
 $or:[
 
@@ -369,47 +337,43 @@ async(req,res,next)=>{
 
 try{
 
-const deleted =
+const contactId =
+req.params.id;
 
-await Contact.findOneAndDelete({
 
-contactId:
-req.params.contactId
-
+// 1. find contact
+const contact =
+await Contact.findOne({
+contactId: contactId
 });
 
 
-if(!deleted){
-
-return res
-.status(404)
-.json({
-
+// 2. if not found
+if(!contact){
+return res.status(404).json({
 success:false,
-
-message:
-"Contact not found"
-
+message:"Contact not found",
+errors:[]
 });
-
 }
 
 
-res
-.status(200)
-.json({
+// 3. soft delete (NOT permanent delete)
+contact.deleted = true;
+contact.status = "inactive";
 
+await contact.save();
+
+
+// 4. response
+return res.status(200).json({
 success:true,
-
-message:
-`Contact ${deleted.contactId} deleted successfully`
-
+message:`Contact ${contactId} deleted successfully`,
+data:null
 });
 
 }catch(err){
-
 next(err);
-
 }
 
 };
