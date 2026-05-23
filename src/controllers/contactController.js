@@ -134,6 +134,7 @@ async(req,res,next)=>{
 
 try{
 
+// pagination
 const page =
 parseInt(req.query.page) || 1;
 
@@ -143,9 +144,13 @@ parseInt(req.query.limit) || 5;
 const skip =
 (page - 1) * limit;
 
+
+// search
 const search =
 req.query.search || "";
 
+
+// filter
 const status =
 req.query.status;
 
@@ -173,15 +178,17 @@ $options:"i"
 };
 
 
+// status filter
 if(status){
 filter.status = status;
 }
 
 
-const contacts =
+// fetch raw data
+const rawContacts =
 await Contact.find(filter)
 
-.select("-_id -__v")
+.select("-_id -__v -name")
 
 .sort({ contactId:1 })
 
@@ -190,10 +197,26 @@ await Contact.find(filter)
 .limit(limit);
 
 
+// transform response (IMPORTANT)
+const contacts = rawContacts.map((c) => ({
+contactId: c.contactId,
+first_name: c.first_name,
+last_name: c.last_name,
+email: c.email,
+phone: c.phone,
+status: c.status,
+company: c.company,
+createdAt: c.createdAt,
+updatedAt: c.updatedAt
+}));
+
+
+// total count
 const total =
 await Contact.countDocuments(filter);
 
 
+// response
 res.status(200).json({
 
 success:true,
